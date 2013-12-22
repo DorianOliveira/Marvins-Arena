@@ -1,0 +1,5 @@
+C:\Program Files (x86)\MarvinsArena\Robots\Detonator.dll
+C:\Program Files (x86)\MarvinsArena\Robots\Detonator.pdb
+C:\Users\Dorian\Dropbox\Pessoal\Desenvolvimento\Marvins Arena\MarvinsArena\Detonator\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\Dorian\Dropbox\Pessoal\Desenvolvimento\Marvins Arena\MarvinsArena\Detonator\obj\Debug\Detonator.dll
+C:\Users\Dorian\Dropbox\Pessoal\Desenvolvimento\Marvins Arena\MarvinsArena\Detonator\obj\Debug\Detonator.pdb
