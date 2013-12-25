@@ -4,14 +4,15 @@ using System.Linq;
 using System.Text;
 using MarvinsArena.Robot;
 
+
 namespace Detonator
 {
     public class Detonator : EnhancedRobot, IRobot
     {
 
-        #region Variaveis
+        #region | Variaveis |
 
-        #region | Colisao |
+        #region - Colisao -
 
         private bool blnColidindo;
         private bool blnVoltando;
@@ -20,29 +21,36 @@ namespace Detonator
 
         #endregion
 
-        #region | Posicao |
+        #region - Posicao -
 
         private bool blnPosicaoIdeal;
         private bool blnVirandoPosicaoIdeal;
 
         #endregion
 
-        #region | Robos |
+        #region - Robos -
 
         private bool blnRoboEncontrado;
         private bool blnEncontrandoAngulo;
+        private bool blnIndoPara;
+        private bool blnRotatingGun;
+        private bool blnRotatedGun;
+        private bool blnRotated;
+
+
+        private double dblEnemyX;
+        private double dblEnemyY;
+
+        private double dblPosicaoRobo;
 
         #endregion
 
         #endregion
 
-        #region Initialize
+        #region | Initialize |
 
         public void Initialize()
         {
-
-
-
 
             blnColidindo = false;
             blnVirando = false;
@@ -62,14 +70,13 @@ namespace Detonator
 
         #endregion
 
-        #region Run
+        #region | Run |
 
         public void Run()
         {
 
+            //Mantém o radar girando
             RotateRadarLeftDeg(1);
-
-            //Print("rotacao atual: " + RotationDeg.ToString());
 
             if (!blnColidindo)
             {
@@ -84,139 +91,94 @@ namespace Detonator
                 }
             }
 
+            EvitarColisao();
 
+            //Se encontrou um robo (no evento de scanner)
+            if (blnRoboEncontrado)
+            {
 
+                //Crias posicoes
+                Trigonometry.Vetor2D vetThis = new Trigonometry.Vetor2D { X = PositionX, Y = PositionY };
+                Trigonometry.Vetor2D vetScannedRobot = new Trigonometry.Vetor2D { X = dblEnemyX, Y = dblEnemyY };
+                
 
+                //Se nao esta procurando angulo
+                if (!blnEncontrandoAngulo)
+                {
+                    
+                    //Encontra o angulo a ser rotacionado para se voltar para o robo escaneado
+                    dblPosicaoRobo = Trigonometry.FindAngle(vetThis, vetScannedRobot);
 
+                    //Rotaciona o carro para o robo
+                    RotateToAngle(Options.CAR, dblPosicaoRobo);
 
-            //RotateToAngle(35);
+                    //Evita entrar novamente aqui enquanto procura o angulo
+                    blnEncontrandoAngulo = true;
+                }
 
-            //EvitarColisao();
+                //Se está procurando o angulo e ja encontrou
+                if (blnEncontrandoAngulo && RemainingRotation == 0)
+                {
+                    //Define que a rotação está completa
+                    blnRotated = true;
+                }
 
+                //Se já rotacionou o carro mas a arma ainda nao
+                if (blnRotated && !blnRotatingGun)
+                {
+                    
+                    //Rotaciona a arma
+                    RotateToAngle(Options.GUN, dblPosicaoRobo);
 
+                    //Evita entrar aqui novamente, pois a arma está rotacionando
+                    blnRotatingGun = true;
+                }
 
+                //Se a arma está rotacionando e já encontrou a posição desejada
+                if (blnRotatingGun && RemainingRotationGun == 0)
+                {
+                    //Define que a arma está na posição desejada
+                    blnRotatedGun = true;
+                    
+                }
 
+                //Se a arma está na posicao desejada
+                if (blnRotatedGun)
+                {
+                    //Atira
+                    FireBullet(10);
 
+                    //Reinicia as posicoes. Isso permite encontrar outro robo e reiniciar o processo
+                    ReiniciarPosicoes();
+                }
+            }
         }
 
         #endregion
 
-        #region Metodos
-
+        #region | Metodos |
 
         /// <summary>
-        /// Para fins de cálculo e visualização geométrica, vamos representar o plano cartesiano pelos números do RELÓGIO. Temos quatro quadrantes.
-        /// PRIMEIRO QUADRANTE = entre os números 12 e 3
-        /// SEGUNDO QUADRANTE = entre os números 3 e 6
-        /// TERCEIRO QUADRANTE = entre os números 6 e 9
-        /// QUARTO QUADRANTE = entre os números 9 e 12
+        /// Reinicia todas as posicoes relacionadas a busca de robos
         /// </summary>
-        /// <param name="vetOrigem"></param>
-        /// <param name="vetDestino"></param>
-        /// <returns></returns>
-        private double FindAngle(Vetor2D vetOrigem, Vetor2D vetDestino)
+        private void ReiniciarPosicoes()
         {
+            blnRoboEncontrado = false;
+            blnEncontrandoAngulo = false;
+            blnRotatedGun = false;
+            blnRotatingGun = false;
+            blnRotated = false;
 
+            dblPosicaoRobo = 0;
 
-            if (!blnEncontrandoAngulo)
-            {
-                double dblFinalAngle = 0.0;
-
-                blnEncontrandoAngulo = true;
-
-                //Cria um vetor auxiliar para traçar um triângulo, possibilitando o uso de funções trigonométricas
-                Vetor2D vetAuxiliar = new Vetor2D { X = vetOrigem.X, Y = vetDestino.Y };
-
-                //Recupera um dos catetos (neste caso, será o cateto oposto, para calcular a tangente)
-                double dblCateto1 = vetDestino.X - vetAuxiliar.X;
-
-                //Recupera o cateto adjacente
-                double dblCateto2 = vetAuxiliar.Y - vetOrigem.Y;
-
-                //Recupera a variação dos catetos para calcular a hipotenusa
-                double dblVariacaoCateto1 = Math.Pow(dblCateto1, 2);
-                double dblVariacaoCateto2 = Math.Pow(dblCateto2, 2);
-
-                //Cria o valor da hipotenusa (não será utilizado aqui, já que vamos trabalhar com tangente)
-                double dblHipotenusa = Math.Sqrt(dblVariacaoCateto1 + dblVariacaoCateto2);
-
-                //Calcula a tangente, dividindo o cateto oposto (cateto 1) pelo adjacente (cateto 2)
-                double dblTangente = dblCateto1 / dblCateto2;
-
-                //Recupera o ângulo em radianos
-                double dblRadianos = Math.Atan(dblTangente);
-
-                //Converte o ângulo em radianos para graus
-                double dblGraus = dblRadianos * (180.0 / Math.PI);
-
-                //Print("angulo encontrado inicial: " + dblGraus.ToString());
-
-                //Quando o cálculo culminar nas extremidades (quando a tangente é zero)
-                if (dblTangente == 0)
-                {
-                    //Extremidade de cima
-                    if (dblCateto2 < 0)
-                    {
-
-                        dblGraus = -90;
-                    }
-                    //Extremidade de baixo
-                    else if (dblCateto1 >= 0 && dblCateto2 >= 0)
-                    {
-                        dblGraus = 90;
-                    }
-                }
-
-                //Se a tangente for menor que zero, o ponto destino se encontra no PRIMEIRO ou TERCEIRO quadrante
-                if (dblTangente < 0)
-                {
-
-                    //TERCEIRO QUADRANTE
-                    if (dblCateto1 < 0)
-                    {
-
-                        dblGraus = 90 - dblGraus;
-
-                    }
-                    //PRIMEIRO QUADRANTE
-                    else
-                    {
-                        dblGraus += 90;
-                        dblGraus *= -1;
-                    }
-                }
-
-                    //SEGUNDO ou QUARTO quadrantes
-                else if (dblTangente > 0)
-                {
-                    //QUARTO QUADRANTE
-                    if (dblCateto1 < 0 && dblCateto2 < 0)
-                    {
-                        dblGraus = 90 + dblGraus;
-                        dblGraus *= -1;
-                    }
-                        //SEGUNDO QUADRANTE
-                    else
-                        dblGraus = 90 - dblGraus;
-                }
-
-                dblFinalAngle = dblGraus;
-
-
-                //Print(string.Format("Cateto 1 (oposto):  {0}", dblCateto1));
-                //Print(string.Format("Cateto 2 (adjacente):  {0}", dblCateto2));
-                //Print(string.Format("tangente :  {0}", dblTangente));
-                //Print(string.Format("angulo (radianos):  {0}", dblRadianos));
-                //Print(string.Format("angulo (graus):  {0}", dblGraus));
-
-                return dblFinalAngle;
-
-            }
-
-            return 0.0;
-
+            dblEnemyX = 0;
+            dblEnemyY = 0;
         }
-
+        
+        /// <summary>
+        /// Overload do método que rotaciona o carro
+        /// </summary>
+        /// <param name="dblAngle"></param>
         private void RotateToAngle(double dblAngle)
         {
             RotateToAngle(Options.CAR, dblAngle);
@@ -225,50 +187,65 @@ namespace Detonator
         /// <summary>
         /// Rotaciona o carro para o angulo passado por parametro, considerando a posição atual.
         /// <remarks>Este método é diferente do rotate, que rotaciona uma quantidade
-        /// definida de graus, não considerando a posição atual</remarks>
+        /// definida de graus, não considerando a posição atual
+        /// OBSERVACAO: Este método nao é perfeito. O controle de quantas vezes ele é chamado deve ser feito externamente. NÃO FUNCIONA CORRETAMENTE SE FOR
+        /// CHAMADO DUAS OU MAIS VEZES SEGUIDAS
+        /// </remarks>
         /// </summary>
         /// <param name="dblAngle"></param>
+        /// <param name="option">Define o que será rotacionado. Pode ser Options.CAR, Options.GUN, Options.RADAR</param>
         private void RotateToAngle(Options option, double dblAngle)
         {
+            //Reinicia as posicoes
+            blnPosicaoIdeal = false;
+            blnVirandoPosicaoIdeal = false;
 
+            //Se nao encontrou a posicao ideal
             if (!blnPosicaoIdeal)
             {
+                blnPosicaoIdeal = true;
+
                 //Define o novo angulo considerando a posicao atual
-                double dblNovoAngulo = dblAngle - RotationDeg;
+                double dblNovoAngulo = 0;
 
                 //Inicia a rotação, se já não está fazendo.
                 if (!blnVirandoPosicaoIdeal)
                 {
                     blnVirandoPosicaoIdeal = true;
 
+                    //Recupera o angulo atual e faz a rotação de acordo com a opcao selecionada
                     switch (option)
                     {
-
                         case Options.GUN:
+
+                            dblNovoAngulo = dblAngle - RotationGunDeg;
                             RotateGunRightDeg(dblNovoAngulo);
+                            
                             break;
 
                         case Options.RADAR:
+
+                            dblNovoAngulo = dblAngle - RotationRadarDeg;
                             RotateRadarRightDeg(dblNovoAngulo);
+                            
                             break;
 
                         default:
                         case Options.CAR:
+
+                            dblNovoAngulo = dblAngle - RotationDeg;
                             RotateRightDeg(dblNovoAngulo);
+                            
                             break;
                     }
 
                 }
-
-                //Se terminuo a rotação, reinicializa as variaveis
-                if (RemainingRotation == 0)
-                {
-                    blnPosicaoIdeal = true;
-                    blnVirandoPosicaoIdeal = false;
-                }
             }
         }
 
+        /// <summary>
+        /// Define que está prestes a colidir
+        /// </summary>
         private void Colidindo()
         {
             blnColidindo = true;
@@ -276,53 +253,47 @@ namespace Detonator
             blnVoltando = false;
         }
 
+        /// <summary>
+        /// Determina que a posicao do robo é segura e ele pode seguir em frente, sem bater
+        /// </summary>
+        private void EmSeguranca()
+        {
+            blnColidindo = false;
+            blnVirando = false;
+            blnVoltando = false;
+        }
+
+        /// <summary>
+        /// Metodo responsavel por evitar a colisão
+        /// </summary>
         private void EvitarColisao()
         {
+            //Se está colidindo
             if (blnColidindo)
             {
-
+                //Se já nao esta voltando (dando ré), inicia a volta para trás
                 if (!blnVoltando)
                 {
                     blnVoltando = true;
                     MoveBackward(10);
-
-
                 }
 
-                if (RemainingDistance == 0)
+                //Se terminou a ré
+                if (blnVoltando && RemainingDistance == 0)
                 {
-
+                    //Se nao está virando
                     if (!blnVirando)
                     {
+                        //Inicia a rotação
                         blnVirando = true;
                         RotateLeftDeg(20);
                     }
                 }
 
+                //Se esta virando e encontrou a posicao ideal
                 if (RemainingRotation == 0 && blnVirando)
-                {
-                    blnColidindo = false;
-                    blnVirando = false;
-                    blnVoltando = false;
-                }
+                    EmSeguranca();
 
-                //if (RemainingDistance == 0)
-                //{
-
-                //    blnVoltando = false;
-
-                //    if (!blnVirando)
-                //    {
-                //        blnVirando = true;
-                //        RotateLeftDeg(20);
-                //    }
-
-                //    if (RemainingRotation == 0)
-                //    {
-                //        blnColidindo = false;
-
-                //    }
-                //}
             }
             else
                 MoveForward(10);
@@ -330,25 +301,21 @@ namespace Detonator
 
         #endregion
 
-        #region Eventos
+        #region | Eventos |
 
 
         void Detonator_HitBullet(object sender, EventArgs e)
         {
 
         }
+
         void Detonator_HitWall(object sender, EventArgs e)
         {
-            //Colidindo();
-            //StopMove();
+
         }
 
         void Detonator_HitRobot(object sender, EventArgs e)
         {
-            //Colidindo();
-
-
-
 
 
         }
@@ -361,49 +328,27 @@ namespace Detonator
         void Detonator_ScannedRobot(object sender, ScannedRobotEventArgs e)
         {
 
-            //if (PositionX < intDistanciaSegura
-            //    || PositionX > e.PositionX + 10
-            //    || PositionY < intDistanciaSegura
-            //    || PositionY > e.PositionY + 10
-            //    )
-            //{
-            //    Colidindo();
-            //}
-
-
-            //StopRotateRadar();
-
-
+            //Se nao foi encontrado nenhum robo, recupera as posicoes do robo escaneado
             if (!blnRoboEncontrado)
             {
+                dblEnemyX = e.PositionX;
+                dblEnemyY = e.PositionY;
+
+                //Define que foi encontrado um robo. Evita entrar indesejadamente aqui
                 blnRoboEncontrado = true;
 
-
-                Vetor2D vetThis = new Vetor2D { X = PositionX, Y = PositionY };
-                Vetor2D vetScannedRobot = new Vetor2D { X = e.PositionX, Y = e.PositionY };
-
-                double dblPosicaoRobo = FindAngle(vetThis, vetScannedRobot);
-
-                RotateToAngle(Options.GUN, dblPosicaoRobo);
-
             }
-
-            if (RemainingRotationGun == 0)
-            {
-                FireBullet(2);
-            }
-
-
-
-
 
 
         }
 
         #endregion
 
-        #region Opcoes
-
+        #region | Opcoes |
+        
+        /// <summary>
+        /// Enum utilizado para definir com que parte do robo está lidando (carro, arma ou radar)
+        /// </summary>
         private enum Options
         {
             GUN,
@@ -413,63 +358,10 @@ namespace Detonator
 
         #endregion
 
-
-
     }
 
-    #region Triangulo
-
-    public struct Vetor2D
-    {
-        private double dblX;
-        private double dblY;
-
-        public double X
-        {
-            get
-            {
-                return dblX;
-            }
-            set
-            {
-                dblX = value;
-
-            }
-        }
-
-        public double Y
-        {
-            get
-            {
-                return dblY;
-            }
-            set
-            {
-                dblY = value;
-
-            }
-        }
-    }
-    public struct Triangulo
-    {
-        private Vetor2D A;
-        private Vetor2D B;
-        private Vetor2D C;
-
-
-        public double Cateto1
-        {
-            get
-            {
-                return B.X - A.X;
-            }
-        }
 
 
 
-
-    }
-
-    #endregion
 
 }

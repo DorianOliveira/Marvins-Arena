@@ -3,11 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Detonator", "Detonator\Detonator.csproj", "{F7BA0FEE-D2BC-4854-99AC-ADC60D7A6515}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C9CBC992-CBFD-483F-9FF3-5691D68ECC97}"
-	ProjectSection(SolutionItems) = preProject
-		..\..\..\..\..\..\..\Program Files (x86)\MarvinsArena\MarvinsArena.exe = ..\..\..\..\..\..\..\Program Files (x86)\MarvinsArena\MarvinsArena.exe
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
